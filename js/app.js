@@ -84,7 +84,7 @@ function bump(node) { node.classList.remove("bump"); void node.offsetWidth; node
 function bankInfo() {
   const n = INDEX.questions.length;
   const days = INDEX.daily_mix
-    ? Math.min(...Object.entries(INDEX.daily_mix).map(([d, k]) => INDEX.questions.filter((q) => q.difficulty === d).length / k))
+    ? Math.min(...Object.entries(INDEX.daily_mix).map(([d, k]) => INDEX.questions.filter((q) => (q.bucket || q.difficulty) === d).length / k))
     : n / 7;
   const weeks = Math.floor((0.9 * days) / 7);
   return `${fmt(n)} prompts${weeks >= 2 ? ` · no daily repeats for at least ${weeks} weeks` : ""}`;

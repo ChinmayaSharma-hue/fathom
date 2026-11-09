@@ -42,7 +42,8 @@ const cache = new Map();
 
 // questions: [{id, difficulty?, family?}] or plain ids
 export function dailyPrompts(date, questions, mix = null, epoch = EPOCH) {
-  let qs = questions.map((q) => (typeof q === "string" ? { id: q } : q));
+  let qs = questions.map((q) => (typeof q === "string" ? { id: q } : q))
+    .map((q) => ({ ...q, difficulty: q.bucket || q.difficulty }));   // daily bucket, if the bank has one
   if (qs.every((q) => q.difficulty)) mix = mix || DEFAULT_MIX;
   else { mix = { all: PROMPTS_PER_DAY }; qs = qs.map((q) => ({ ...q, difficulty: "all" })); }
   const day = Math.max(0, Math.round((toMs(date) - toMs(epoch)) / DAY_MS));
