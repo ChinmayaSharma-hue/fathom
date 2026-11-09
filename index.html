@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1a26">
+  <!-- Backend base URL. Empty = same origin. "off" = static-only deploy (local scoring, nothing recorded). -->
+  <meta name="fathom-api" content="off">
+  <title>Fathom · daily deep-answer dive</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Silkscreen&family=VT323&display=swap">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="scene" aria-hidden="true"></canvas>
+  <div class="scanlines" aria-hidden="true"></div>
+
+  <header id="hud" hidden>
+    <div class="plate hud-plate"><span class="lbl">Depth</span><span id="hud-depth" class="val depth">0m</span></div>
+    <div class="hud-mid">
+      <div id="hud-dots" class="dots" aria-hidden="true"></div>
+      <span id="hud-count" class="lbl"></span>
+    </div>
+    <div class="plate hud-plate right"><span class="lbl">Score</span><span id="hud-score" class="val score">0</span></div>
+  </header>
+
+  <main id="app">
+    <!-- home -->
+    <section id="home" class="screen home">
+      <div class="title">
+        <div class="mark" aria-hidden="true"><span></span><span></span><span></span></div>
+        <h1>FATHOM</h1>
+        <p class="kicker">the daily deep-answer dive</p>
+        <p class="sub">7 prompts · 25 seconds of air each · the rarer your answer, the deeper you go</p>
+      </div>
+      <div class="home-actions">
+        <button id="btn-daily" class="btn primary big">Drop the bell</button>
+        <p id="daily-status" class="note center"></p>
+        <div class="row-actions">
+          <button id="btn-practice" class="btn ghost">Practice</button>
+          <div class="seg" role="radiogroup" aria-label="Practice difficulty">
+            <button data-diff="" role="radio">Any</button><button data-diff="easy" role="radio">Easy</button>
+            <button data-diff="medium" role="radio">Med</button><button data-diff="hard" role="radio">Hard</button>
+          </div>
+        </div>
+        <details class="howto plate">
+          <summary>How to play</summary>
+          <ul>
+            <li>Each prompt asks you to name one thing. Type an answer and press Enter.</li>
+            <li>Wrong answers bounce off the hull: keep trying while you have air. Your first valid answer locks in.</li>
+            <li>Rarer answers score more and sink the bell deeper. Each depth zone has its own creature:
+              <span class="legend" id="legend"></span></li>
+            <li>Every day ramps up: three easy prompts, two medium, two hard. After each prompt the sonar shows where the deep answers were.</li>
+            <li>Rarity starts as an estimate and learns from real players. Your score uses the rarity at the moment you answered.</li>
+          </ul>
+        </details>
+        <p id="bank-info" class="note center"></p>
+        <p id="net" class="note center warn"></p>
+      </div>
+    </section>
+
+    <!-- round -->
+    <section id="round" class="screen" hidden>
+      <div class="plate prompt-plate">
+        <p id="r-label" class="lbl accent"></p>
+        <h2 id="r-prompt" class="prompt"></h2>
+        <div id="r-countdown" class="countdown" hidden></div>
+        <form id="r-form" autocomplete="off">
+          <span class="caret" aria-hidden="true">&gt;</span>
+          <input id="r-input" type="text" inputmode="text" autocapitalize="off" autocorrect="off" spellcheck="false"
+                 enterkeyhint="go" maxlength="80" placeholder="type an answer" aria-label="Your answer">
+          <button class="btn primary" type="submit">Dive</button>
+        </form>
+        <div class="air" role="timer" aria-label="Air left">
+          <span class="lbl">Air</span>
+          <div id="air-cells" class="air-cells"></div>
+          <span id="air-num" class="air-num">25</span>
+        </div>
+        <p id="r-feedback" class="feedback" aria-live="assertive"></p>
+      </div>
+    </section>
+
+    <!-- reveal (bottom sheet) -->
+    <section id="reveal" class="screen sheet" hidden>
+      <div class="sheet-inner">
+        <div id="v-card" class="result"></div>
+        <section id="v-sonar" class="sonar" aria-label="Sonar: what this round teaches"></section>
+        <h3 class="rule">Most common answers</h3>
+        <ol id="v-common" class="answers"></ol>
+        <h3 class="rule">Deep cuts you might know</h3>
+        <ol id="v-rare" class="answers"></ol>
+        <div class="sheet-actions">
+          <button id="v-next" class="btn primary big">Next prompt</button>
+          <button id="v-end" class="btn ghost" hidden>End practice</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- end -->
+    <section id="end" class="screen sheet full" hidden>
+      <div class="sheet-inner">
+        <div class="end-head">
+          <span id="e-title" class="lbl"></span>
+          <div class="end-score"><span id="e-score" class="big-num">0</span><span id="e-depth" class="depth"></span></div>
+          <span id="e-zone" class="lbl accent"></span>
+        </div>
+        <h3 class="rule">Dive profile</h3>
+        <canvas id="e-chart" class="chart" aria-label="Depth reached on each prompt"></canvas>
+        <pre id="e-share" class="share"></pre>
+        <button id="e-copy" class="btn primary big">Copy result</button>
+        <p id="e-copied" class="note center" aria-live="polite"></p>
+        <h3 class="rule">Your answers</h3>
+        <ol id="e-list" class="catch"></ol>
+        <section id="e-habits" class="sonar" hidden></section>
+        <h3 class="rule">Logbook</h3>
+        <p id="e-log" class="logbook"></p>
+        <div class="sheet-actions">
+          <button id="e-practice" class="btn ghost big">Keep diving in practice</button>
+          <button id="e-home" class="btn link">Back to the surface</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="stamp" class="stamp" aria-live="polite" hidden></div>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
